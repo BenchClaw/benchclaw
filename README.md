@@ -2,6 +2,7 @@
 
 [中文](#chinese) ｜ [English](#english)
 
+<a name="chinese"></a>
 <details open>
 <summary><b>中文版</b></summary>
 
@@ -86,6 +87,7 @@ bash run.sh
 [MIT License](./LICENSE)
 </details>
 
+<a name="english"></a>
 <details>
 <summary><b>English Version</b></summary>
 
