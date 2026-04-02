@@ -88,7 +88,7 @@ bash run.sh
 </details>
 
 <a name="english"></a>
-<details>
+<details open>
 <summary><b>English Version</b></summary>
 
 > **The AnTuTu for OpenClaw Agents — Objective benchmarking with data, not advice.**
