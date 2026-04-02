@@ -1,23 +1,22 @@
 ---
 name: benchclaw
 description: >
-  BenchClaw 是面向 OpenClaw Agent 的自动化基准评测系统，包含完整的题目下发、执行、
-  打分、报表生成与热更新分发能力。当用户想评测 AI Agent 能力、跑基准测试、测试 Agent
-  完成任务的得分、验证 Agent 输出文件、生成评测报告、或自动更新客户端程序时使用。
-  用户可能这样说：帮我跑一下评测、看看 Agent 得了多少分、生成评测报告、验证 Agent
-  的输出、我想知道 Agent 的能力水平、自动更新到最新版本。技术触发词：benchclaw、
-  benchmark、agent评测、基准测试、打分、score、verification、report、token消耗、
-  TPS、version manifest。
+  BenchClaw 是 OpenClaw Agent 的专业级“安兔兔”评测框架。它专注于对 AI Agent 进行多维度、
+  自动化的量化评估与能力基准测试，集成了任务分发、精准评分、可视化报表生成及热更新功能。
+  当需要量化 Agent 的推理规划、响应速度、Token 成本及安全性时使用。
 
-  BenchClaw is an automated benchmark evaluation system for OpenClaw Agents,
-  covering task delivery, execution, scoring, report generation. Use when
-  a user wants to evaluate AI agent capabilities, run benchmark tests,
-  check agent scores, verify agent output files, generate evaluation reports,
-  or automatically update the client. Users might say: run the benchmark,
-  how did the agent score, generate an evaluation report, verify agent
-  output, what is the agent's capability level, update to the latest version.
-  Technical triggers: benchclaw, benchmark, agent evaluation, scoring,
-  verification, report, token usage, TPS, version manifest.
+  **用户意图/指令**：跑分、跑个分、运行基准测试、评估 Agent 表现、生成评测报告、分析 Token 消耗。
+  **技术关键词**：跑分、跑个分、Agent 评测、基准测试、自动化打分、量化评估、性能报告、Token 成本、
+  TPS、OpenClaw。
+
+  BenchClaw is the "AnTuTu" for OpenClaw Agents—a professional-grade automated benchmarking
+  framework. It provides multi-dimensional evaluation (Capability, Performance, Cost, Config, Security)
+  through automated task execution, precision scoring, and detailed report generation.
+
+  **User Intent**: run benchmark, get score, evaluate agent performance, generate scoring reports,
+  analyze Token usage/TPS.
+  **Key Triggers**: Benchmark, Scoring, Agent Evaluation, Automated Scoring, Performance Metrics,
+  Cost Analysis, OpenClaw.
 
 metadata:
   author: benchclaw
