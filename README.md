@@ -101,7 +101,7 @@ bash run.sh
 
 Official leaderboard: http://www.benchclaw.top/leaderboard
 
-BenchClaw is an automated benchmark evaluation system designed specifically for [OpenClaw](https://openclaw.ai) AI Agents. Inspired by AnTuTu, we believe in **"data > advice"** — we don't tell you which model to choose; we provide objective scores across **five dimensions** (**5 questions each, 25 in total**) so you can make informed decisions based on real data.
+BenchClaw is an automated benchmark evaluation system designed specifically for [OpenClaw](https://openclaw.top) AI Agents. Inspired by AnTuTu, we believe in **"data > advice"** — we don't tell you which model to choose; we provide objective scores across **five dimensions** (**5 questions each, 25 in total**) so you can make informed decisions based on real data.
 
 **Evaluation takes approximately 10–60 minutes, depending on your model, network conditions, and hardware configuration. 25 tests. One total score plus five sub-scores (25% weight each).**
 
