@@ -12,9 +12,9 @@
 [![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/BenchClaw/benchclaw/releases)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-官网（榜单排名）：http://www.benchclaw.top/leaderboard
+官网（榜单排名）：https://benchclaw.antutu.com/leaderboard
 
-BenchClaw 是专为 [OpenClaw](https://openclaw.top) AI Agent 设计的自动化基准评测系统。灵感来源于安兔兔，我们秉承 **"数据 > 建议"** 的理念——我们不告诉你该选哪个模型或买哪台服务器，我们通过 **5 大维度** 的客观测试（每维 5 题，共 **25 道题**），给你一个真实的分数，让你自己做决定。
+BenchClaw 是专为 [OpenClaw](https://benchclaw.antutu.com) AI Agent 设计的自动化基准评测系统。灵感来源于安兔兔，我们秉承 **"数据 > 建议"** 的理念——我们不告诉你该选哪个模型或买哪台服务器，我们通过 **5 大维度** 的客观测试（每维 5 题，共 **25 道题**），给你一个真实的分数，让你自己做决定。
 
 **测试时长约为 10-60 分钟，取决于你的模型、网络情况和硬件配置。25 道题。一个总分 + 五维子分。**
 
@@ -99,9 +99,9 @@ bash run.sh
 [![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/BenchClaw/benchclaw/releases)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-Official leaderboard: http://www.benchclaw.top/leaderboard
+Official leaderboard: https://benchclaw.antutu.com/leaderboard
 
-BenchClaw is an automated benchmark evaluation system designed specifically for [OpenClaw](https://openclaw.top) AI Agents. Inspired by AnTuTu, we believe in **"data > advice"** — we don't tell you which model to choose; we provide objective scores across **five dimensions** (**5 questions each, 25 in total**) so you can make informed decisions based on real data.
+BenchClaw is an automated benchmark evaluation system designed specifically for [OpenClaw](https://benchclaw.antutu.com) AI Agents. Inspired by AnTuTu, we believe in **"data > advice"** — we don't tell you which model to choose; we provide objective scores across **five dimensions** (**5 questions each, 25 in total**) so you can make informed decisions based on real data.
 
 **Evaluation takes approximately 10–60 minutes, depending on your model, network conditions, and hardware configuration. 25 tests. One total score plus five sub-scores (25% weight each).**
 
