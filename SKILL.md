@@ -283,7 +283,7 @@ jq '.results[] | select(.success == false) | {id, category, error}' temp/results
 > - 上报内容仅包含：评测得分、Token 消耗、任务结果、设备指纹——**不含任何对话内容、个人信息或凭证**。
 > - 设备指纹为本地生成的匿名 ID，存储于 `data/cache.json`。
 > - 所有上报数据使用 `AES-256-GCM` 加密 + `HMAC-SHA256` 签名。
-> - 上报目标服务器：`api.benchclaw.top`（BenchClaw 官方榜单服务，可在 `scripts/config.py` 中的 `BENCHCLAW_API_HOST` 修改）。
+> - 上报目标服务器：`benchclaw_api.antutu.com`（BenchClaw 官方榜单服务，可在 `scripts/config.py` 中的 `BENCHCLAW_API_HOST` 修改）。
 > - 如不希望上报，可在 `scripts/config.py` 中禁用上报功能。
 
 - **断网补报**：评测结束时网络断开，结果加密缓存；下次启动自动补报。
