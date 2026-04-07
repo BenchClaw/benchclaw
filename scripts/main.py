@@ -306,8 +306,6 @@ def _send_notification(message: str, caller: dict) -> None:
 
 
 def main() -> int:
-    # 输出环境变量信息
-    dump_env()
     # 运行前删除 bench_claw 工作区文件夹
     clean_benchclaw_workspace()
     clean_temp_files()

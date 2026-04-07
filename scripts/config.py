@@ -11,7 +11,7 @@ CLIENT_VERSION = '1.0.0'
 BENCHCLAW_CLIENT_KEY = "T1ELQGiDLP0mEpwDOVsWrktwtWgcyr1q621wFkmj6fY="
 
 # ---------- API ----------
-BENCHCLAW_API_HOST = "benchclaw_api.antutu.com"  # API 域名，更换时只需修改这里
+BENCHCLAW_API_HOST = "benchclawapi.antutu.com"  # API 域名，更换时只需修改这里
 DEFAULT_API_URL = f"https://{BENCHCLAW_API_HOST}/api/v1/tests/request"
 DEFAULT_SUBMIT_API_URL = f"https://{BENCHCLAW_API_HOST}/api/v1/tests/submit"
 
