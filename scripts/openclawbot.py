@@ -1,26 +1,25 @@
 import os
 from typing import Any
 import json
+import subprocess
+import logging
 
 try:
     import json5  # type: ignore[import-not-found]
 except Exception:
     json5 = None
 
+logger = logging.getLogger("openclawbot")
+
 class OpenclawBot:
     """
-    负责从用户目录 ~/.openclaw/openclaw.json 读取关键信息：
+    负责通过 openclaw CLI 读取关键信息：
     - 版本号
-    - 模型列表
     - 默认 primary / fallbacks 模型
-    - 网关端口、模式及认证方式（token / password）
     """
 
     def __init__(self, config_path: str | None = None) -> None:
-        self.config_path = (
-            config_path
-            or os.path.join(os.path.expanduser("~"), ".openclaw", "openclaw.json")
-        )
+        self.config_path = config_path
 
         self.openclaw_root = os.path.join(os.path.expanduser("~"), ".openclaw")
 
@@ -30,83 +29,167 @@ class OpenclawBot:
         self.version: str | None = None
 
         # 模型相关
-        self.models: dict[str, Any] = {}
         self.primary_model: str | None = None
         self.fallback_models: list[str] = []
 
         self._load()
 
     def _load(self) -> None:
-        """读取并解析 openclaw.json，忽略读取和解析错误。"""
-        try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
-                text = f.read()
-        except OSError:
-            return
+        """通过 openclaw CLI 读取并解析信息，忽略读取和解析错误。"""
+        meta_data = self._run_openclaw_json(["config", "get", "meta", "--json"])
+        model_data = self._run_openclaw_json(
+            ["config", "get", "agents.defaults.model", "--json"]
+        )
 
-        data: dict[str, Any] | None = None
+        if isinstance(meta_data, dict):
+            self.raw_config["meta"] = meta_data
+        else:
+            logger.warning("读取 meta 失败或返回非对象 JSON")
+        if isinstance(model_data, dict):
+            self.raw_config["model"] = model_data
+        else:
+            logger.warning("读取 agents.defaults.model 失败或返回非对象 JSON")
+
+        self._extract_version()
+        self._extract_models()
+
+    def _run_openclaw_json(self, args: list[str]) -> Any:
+        """
+        执行 openclaw CLI 并从输出中提取 JSON。
+        输出可能包含 banner/提示语/插件日志等非 JSON 内容，会自动跳过。
+        """
+        # 延迟导入，避免与 agent_cli 的潜在循环依赖。
+        from agent_cli import resolve_openclaw_cmd
+
+        try:
+            proc = subprocess.run(
+                [*resolve_openclaw_cmd(), *args],
+                capture_output=True,
+                text=True,
+                check=False,
+                encoding="utf-8",
+            )
+        except OSError as e:
+            logger.exception("执行 openclaw 命令失败: args=%s, err=%s", args, e)
+            return None
+
+        if proc.returncode != 0:
+            logger.warning(
+                "openclaw 返回非 0 状态码: code=%s, args=%s, stderr=%s",
+                proc.returncode,
+                args,
+                (proc.stderr or "").strip(),
+            )
+
+        output = (proc.stdout or "").strip()
+        if not output:
+            logger.warning("openclaw 无输出: args=%s", args)
+            return None
+
+        for candidate in self._iter_json_candidates(output):
+            data = self._parse_json(candidate)
+            if data is not None:
+                return data
+        logger.warning("openclaw 输出中未找到可解析 JSON: args=%s", args)
+        return None
+
+    def _iter_json_candidates(self, text: str) -> list[str]:
+        """从文本中提取可能的完整 JSON 片段（支持对象和数组）。"""
+        candidates: list[str] = []
+        n = len(text)
+        i = 0
+        while i < n:
+            ch = text[i]
+            if ch not in "{[":
+                i += 1
+                continue
+            end = self._find_json_end(text, i)
+            if end != -1:
+                candidates.append(text[i : end + 1].strip())
+                i = end + 1
+            else:
+                i += 1
+        return candidates
+
+    def _find_json_end(self, text: str, start: int) -> int:
+        """给定 JSON 起始位置，寻找其匹配结束位置；失败返回 -1。"""
+        opening = text[start]
+        if opening not in "{[":
+            return -1
+        closing = "}" if opening == "{" else "]"
+        depth = 0
+        in_string = False
+        escaped = False
+
+        for i in range(start, len(text)):
+            ch = text[i]
+
+            if in_string:
+                if escaped:
+                    escaped = False
+                    continue
+                if ch == "\\":
+                    escaped = True
+                    continue
+                if ch == '"':
+                    in_string = False
+                continue
+
+            if ch == '"':
+                in_string = True
+                continue
+
+            if ch == opening:
+                depth += 1
+                continue
+            if ch == closing:
+                depth -= 1
+                if depth == 0:
+                    return i
+                continue
+
+            # 处理嵌套的另一类括号，如 {"a":[1,2]}
+            if ch in "{[":
+                depth += 1
+            elif ch in "}]":
+                depth -= 1
+                if depth == 0:
+                    return i
+
+        return -1
+
+    def _parse_json(self, text: str) -> Any:
         # 优先使用 json5（若可用），否则退回标准 json
         if json5 is not None:
             try:
-                data_obj = json5.loads(text)  # type: ignore[call-arg]
-                if isinstance(data_obj, dict):
-                    data = data_obj
+                return json5.loads(text)  # type: ignore[call-arg]
             except Exception:
-                data = None
-        if data is None:
-            try:
-                data_obj = json.loads(text)
-                if isinstance(data_obj, dict):
-                    data = data_obj
-            except Exception:
-                data = None
-
-        if data is None:
-            return
-
-        self.raw_config = data
-        self._extract_version()
-        self._extract_models()
+                pass
+        try:
+            return json.loads(text)
+        except Exception:
+            return None
 
     def _extract_version(self) -> None:
         """解析版本号。
 
         优先顺序：
-        1. 顶层字段 version
-        2. meta.lastTouchedVersion
-        3. meta.version
+        1. meta.lastTouchedVersion
+        2. meta.version
         """
-        v: Any = self.raw_config.get("version")
-
-        if v is None:
-            meta = self.raw_config.get("meta")
-            if isinstance(meta, dict):
-                v = (
-                    meta.get("lastTouchedVersion")
-                    or meta.get("version")
-                )
+        v: Any = None
+        meta = self.raw_config.get("meta")
+        if isinstance(meta, dict):
+            v = meta.get("lastTouchedVersion") or meta.get("version")
 
         if isinstance(v, (str, int, float)):
             self.version = str(v)
 
     def _extract_models(self) -> None:
-        cfg = self.raw_config
-
-        agents_cfg = cfg.get("agents")
-        defaults: dict[str, Any] | None = None
-        if isinstance(agents_cfg, dict):
-            maybe_defaults = agents_cfg.get("defaults")
-            if isinstance(maybe_defaults, dict):
-                defaults = maybe_defaults
-
-        # model: { primary, fallbacks }
         model_cfg: dict[str, Any] | None = None
-        if defaults and isinstance(defaults.get("model"), dict):
-            model_cfg = defaults["model"]  # type: ignore[index]
-        else:
-            maybe_model = cfg.get("model")
-            if isinstance(maybe_model, dict):
-                model_cfg = maybe_model
+        maybe_model = self.raw_config.get("model")
+        if isinstance(maybe_model, dict):
+            model_cfg = maybe_model
 
         if model_cfg is not None:
             primary = model_cfg.get("primary") or model_cfg.get("id")
@@ -119,24 +202,11 @@ class OpenclawBot:
                     str(m).strip() for m in fallbacks if str(m).strip()
                 ]
 
-        # models: 模型白名单/目录
-        models_cfg: dict[str, Any] | None = None
-        if defaults and isinstance(defaults.get("models"), dict):
-            models_cfg = defaults["models"]  # type: ignore[index]
-        else:
-            maybe_models = cfg.get("models")
-            if isinstance(maybe_models, dict):
-                models_cfg = maybe_models
-
-        if models_cfg is not None:
-            self.models = models_cfg
-
 def main()->None:
-    bot = OpenclawBot()  # 默认读 ~/.openclaw/openclaw.json
+    bot = OpenclawBot()
     print("版本:", bot.version)
     print("Primary 模型:", bot.primary_model)
     print("Fallbacks:", bot.fallback_models)
-    print("模型列表 keys:", list(bot.models.keys()))
 
 if __name__ == "__main__":
     main()
