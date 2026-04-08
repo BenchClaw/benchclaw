@@ -51,8 +51,8 @@ openclaw skills install benchclaw
 ```bash
 # 下载并解压
 curl -LO https://github.com/BenchClaw/benchclaw/releases/download/v1.0.0/benchclaw.zip
-unzip benchclaw.zip -d ~/.openclaw/skills/
-cd ~/.openclaw/skills/benchclaw
+unzip benchclaw.zip -d ~/.openclaw/workspace/skills/
+cd ~/.openclaw/workspace/skills/benchclaw
 
 # 运行
 bash run.sh
@@ -136,8 +136,8 @@ openclaw skills install benchclaw
 ```bash
 # Download and extract
 curl -LO https://github.com/BenchClaw/benchclaw/releases/download/v1.0.0/benchclaw.zip
-unzip benchclaw.zip -d ~/.openclaw/skills/
-cd ~/.openclaw/skills/benchclaw
+unzip benchclaw.zip -d ~/.openclaw/workspace/skills/
+cd ~/.openclaw/workspace/skills/benchclaw
 
 # Run
 bash run.sh
