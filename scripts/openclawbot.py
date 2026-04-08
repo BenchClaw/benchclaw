@@ -34,17 +34,6 @@ class OpenclawBot:
         self.primary_model: str | None = None
         self.fallback_models: list[str] = []
 
-        # 网关相关
-        self.gateway_port: int | None = None
-        self.gateway_mode: str | None = None
-        self.gateway_auth_mode: str | None = None  # token / password / both / none
-        self.gateway_auth_token: str | None = None
-        self.gateway_auth_password: str | None = None
-
-        self.gateway_remote_url: str | None = None
-        self.gateway_remote_token: str | None = None
-        self.gateway_remote_password: str | None = None
-
         self._load()
 
     def _load(self) -> None:
@@ -78,7 +67,6 @@ class OpenclawBot:
         self.raw_config = data
         self._extract_version()
         self._extract_models()
-        self._extract_gateway()
 
     def _extract_version(self) -> None:
         """解析版本号。
@@ -143,78 +131,12 @@ class OpenclawBot:
         if models_cfg is not None:
             self.models = models_cfg
 
-    def _extract_gateway(self) -> None:
-        gw = self.raw_config.get("gateway")
-        if not isinstance(gw, dict):
-            return
-
-        # 模式（local / remote）
-        mode = gw.get("mode")
-        if isinstance(mode, str):
-            self.gateway_mode = mode.strip()
-
-        # 本地端口
-        port = gw.get("port")
-        try:
-            if port is not None:
-                self.gateway_port = int(port)
-        except (TypeError, ValueError):
-            self.gateway_port = None
-
-        # 认证方式（本地 gateway.auth）：优先使用 gateway.auth.mode
-        auth = gw.get("auth")
-        if isinstance(auth, dict):
-            token = auth.get("token")
-            password = auth.get("password")
-            if isinstance(token, str) and token.strip():
-                self.gateway_auth_token = token.strip()
-            if isinstance(password, str) and password.strip():
-                self.gateway_auth_password = password.strip()
-
-            mode = auth.get("mode")
-            if isinstance(mode, str) and mode.strip():
-                self.gateway_auth_mode = mode.strip()
-            else:
-                has_token = bool(self.gateway_auth_token)
-                has_password = bool(self.gateway_auth_password)
-                if has_token and has_password:
-                    self.gateway_auth_mode = "both"
-                elif has_token:
-                    self.gateway_auth_mode = "token"
-                elif has_password:
-                    self.gateway_auth_mode = "password"
-                else:
-                    self.gateway_auth_mode = "none"
-
-        # 远程模式下的 remote.url / token / password
-        remote = gw.get("remote")
-        if isinstance(remote, dict):
-            url = remote.get("url")
-            if isinstance(url, str) and url.strip():
-                self.gateway_remote_url = url.strip()
-
-            r_token = remote.get("token")
-            if isinstance(r_token, str) and r_token.strip():
-                self.gateway_remote_token = r_token.strip()
-
-            r_pwd = remote.get("password")
-            if isinstance(r_pwd, str) and r_pwd.strip():
-                self.gateway_remote_password = r_pwd.strip()
-
-
 def main()->None:
     bot = OpenclawBot()  # 默认读 ~/.openclaw/openclaw.json
     print("版本:", bot.version)
     print("Primary 模型:", bot.primary_model)
     print("Fallbacks:", bot.fallback_models)
     print("模型列表 keys:", list(bot.models.keys()))
-    print("网关模式:", bot.gateway_mode)
-    print("网关端口:", bot.gateway_port)
-    print("认证方式:", bot.gateway_auth_mode)
-    print("auth token:", bot.gateway_auth_token)
-    print("auth password:", bot.gateway_auth_password)
-    print("remote url:", bot.gateway_remote_url)
-
 
 if __name__ == "__main__":
     main()
