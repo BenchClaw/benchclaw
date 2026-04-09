@@ -42,7 +42,7 @@ def _verify_cli_task(task: dict[str, Any], stdout: str) -> int:
     CLI 模式下的结果验证，逻辑与 TaskManager.verify_task_result 一致。
     返回得分（0 表示验证失败）。
     """
-    from openclawbot import OpenclawBot  # 延迟导入避免循环依赖
+    from openclawbot import get_openclaw_bot  # 延迟导入避免循环依赖
 
     question_id = str(task.get("id") or "")
     answer = task.get("answer")
@@ -50,7 +50,7 @@ def _verify_cli_task(task: dict[str, Any], stdout: str) -> int:
         logger.debug(" [verify] no answer config, skip verification")
         return 0
 
-    workspace_dir = os.path.join(OpenclawBot().openclaw_root, "workspace")
+    workspace_dir = os.path.join(get_openclaw_bot().openclaw_root, "workspace")
     try:
         vr = verify_task_answer(
             workspace_dir=workspace_dir,

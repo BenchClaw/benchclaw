@@ -20,7 +20,7 @@ import urllib.request
 from typing import Any
 from pathlib import Path
 
-from openclawbot import OpenclawBot
+from openclawbot import get_openclaw_bot
 from agent_cli import run_task_cli, get_latest_session, cleanup_agent_sessions_with_prefix
 from utils import get_fingerprint, get_temp_file, clean_temp_files, clean_benchclaw_workspace, HardwareMonitor, get_system_info
 from report import generate_reports_from_dict
@@ -318,7 +318,7 @@ def main() -> int:
     logger.info(f"openclaw Channel: {session_info.channel}")
     logger.info(f"openclaw Target: {session_info.target}")
 
-    bot = OpenclawBot()
+    bot = get_openclaw_bot()
     logger.info(f"Openclaw版本: {bot.version}")
     logger.info(f"Openclaw主模型: {bot.primary_model}")
     logger.info(f"openclaw root: {bot.openclaw_root}")

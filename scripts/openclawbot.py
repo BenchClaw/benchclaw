@@ -11,6 +11,8 @@ except Exception:
 
 logger = logging.getLogger("benchclaw.openclawbot")
 
+_BOT_SINGLETON: "OpenclawBot | None" = None
+
 class OpenclawBot:
     """
     负责通过 openclaw CLI 读取关键信息：
@@ -18,7 +20,19 @@ class OpenclawBot:
     - 默认 primary / fallbacks 模型
     """
 
+    _instance: "OpenclawBot | None" = None
+
+    def __new__(cls, config_path: str | None = None) -> "OpenclawBot":
+        # 进程内单例：多次构造只返回同一个对象
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, config_path: str | None = None) -> None:
+        if getattr(self, "_initialized", False):
+            return
+
         self.config_path = config_path
 
         self.openclaw_root = os.path.join(os.path.expanduser("~"), ".openclaw")
@@ -33,7 +47,7 @@ class OpenclawBot:
         self.fallback_models: list[str] = []
 
         self._load()
-
+        self._initialized = True
     def _load(self) -> None:
         """通过 openclaw CLI 读取并解析信息，忽略读取和解析错误。"""
         logger.info("正在读取Openclaw版本和模型信息...")
@@ -203,8 +217,16 @@ class OpenclawBot:
                     str(m).strip() for m in fallbacks if str(m).strip()
                 ]
 
+
+def get_openclaw_bot(config_path: str | None = None) -> OpenclawBot:
+    """返回全局唯一的 OpenclawBot 实例。"""
+    global _BOT_SINGLETON
+    if _BOT_SINGLETON is None:
+        _BOT_SINGLETON = OpenclawBot(config_path=config_path)
+    return _BOT_SINGLETON
+
 def main()->None:
-    bot = OpenclawBot()
+    bot = get_openclaw_bot()
     print("版本:", bot.version)
     print("Primary 模型:", bot.primary_model)
     print("Fallbacks:", bot.fallback_models)
