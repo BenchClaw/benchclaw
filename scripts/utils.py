@@ -75,14 +75,6 @@ def clean_benchclaw_workspace() -> None:
         logger.debug(f"bench_claw工作区文件夹不存在，跳过删除: {bench_claw_path}")
 
 
-def dump_env() -> dict[str, str]:
-    """返回当前进程的所有环境变量，并通过 logger 逐行输出。"""
-    env = dict(os.environ)
-    for key, value in sorted(env.items()):
-        logger.info(f"ENV {key}={value}")
-    return env
-
-
 # C3: 硬件运行时动态监控
 try:
     import psutil as _psutil

@@ -22,7 +22,7 @@ from pathlib import Path
 
 from openclawbot import OpenclawBot
 from agent_cli import run_task_cli, get_latest_session, cleanup_agent_sessions_with_prefix
-from utils import get_fingerprint, get_temp_file, clean_temp_files, clean_benchclaw_workspace, dump_env, HardwareMonitor, get_system_info
+from utils import get_fingerprint, get_temp_file, clean_temp_files, clean_benchclaw_workspace, HardwareMonitor, get_system_info
 from report import generate_reports_from_dict
 from server import fetch_questions, upload_results_from_dict, flush_pending_uploads
 from config import (
