@@ -90,30 +90,6 @@ def _post_json(
 # 下载题目
 # ─────────────────────────────────────────────
 
-def _measure_api_ping(openclaw_root: str) -> float | None:
-    """从 openclaw.json 读取模型 API baseUrl，测量到该地址的网络延迟（ms）。"""
-    try:
-        import time as _time, json as _json, urllib.request as _req
-        cfg_path = os.path.join(openclaw_root, "openclaw.json")
-        with open(cfg_path) as f:
-            cfg = _json.load(f)
-        providers = cfg.get("models", {}).get("providers", {})
-        # 取第一个有 baseUrl 的 provider
-        base_url = None
-        for provider in providers.values():
-            if isinstance(provider, dict) and provider.get("baseUrl"):
-                base_url = provider["baseUrl"].rstrip("/")
-                break
-        if not base_url:
-            return None
-        # ping baseUrl（HEAD 请求，轻量）
-        _t0 = _time.time()
-        _req.urlopen(base_url, timeout=5)
-        return round((_time.time() - _t0) * 1000, 1)
-    except Exception:
-        return None
-
-
 def fetch_questions(
     device_fingerprint: str,
     primary_model: str,
@@ -130,11 +106,7 @@ def fetch_questions(
       - session_id     : str
       - hash           : str
       - model_cost     : dict | None
-      - api_ping_ms    : float | None  (C2: 到模型 API 服务器的网络延迟)
     """
-    # C2: 测量到模型 API 服务器的网络延迟
-    api_ping_ms = _measure_api_ping(openclaw_root) if openclaw_root else None
-
     out = _post_json(
         api_url,
         body={"model_name": primary_model, "client_version": CLIENT_VERSION},
@@ -161,7 +133,6 @@ def fetch_questions(
         "session_id": data.get("session_id", ""),
         "hash": data.get("hash", ""),
         "model_cost": data.get("model_cost"),
-        "api_ping_ms": api_ping_ms,  # C2: 到模型 API 服务器的延迟（ms）
     }
 
 

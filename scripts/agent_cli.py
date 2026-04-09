@@ -109,6 +109,8 @@ def run_task_cli(
             "tps_score": 0,
             "input_tokens": 0,
             "output_tokens": 0,
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
             "total_tokens": 0,
         }
 
@@ -215,6 +217,8 @@ def run_task_cli(
             "tps_score": 0,
             "input_tokens": token_usage["input_tokens"],
             "output_tokens": token_usage["output_tokens"],
+            "cache_read_tokens": token_usage["cache_read_tokens"],
+            "cache_write_tokens": token_usage["cache_write_tokens"],
             "total_tokens": total_tokens,
         }
 
@@ -243,6 +247,8 @@ def run_task_cli(
             "tps_score": 0,
             "input_tokens": token_usage["input_tokens"],
             "output_tokens": token_usage["output_tokens"],
+            "cache_read_tokens": token_usage["cache_read_tokens"],
+            "cache_write_tokens": token_usage["cache_write_tokens"],
             "total_tokens": total_tokens,
         }
 
@@ -270,6 +276,8 @@ def run_task_cli(
         "tps_score": tps_score,
         "input_tokens": token_usage["input_tokens"],
         "output_tokens": token_usage["output_tokens"],
+        "cache_read_tokens": token_usage["cache_read_tokens"],
+        "cache_write_tokens": token_usage["cache_write_tokens"],
         "total_tokens": total_tokens,
     }
 
@@ -548,10 +556,45 @@ def cleanup_agent_sessions_with_prefix(agent_id: str, prefix_pattern: str) -> No
 
 
 
+def _resolve_session_uuid(agent_id: str, session_id: str) -> str | None:
+    """从 sessions.json 中根据 session key 解析实际的 UUID sessionId。
+
+    session key 格式：agent:{agent_id}:explicit:{session_id}
+    匹配成功后返回对应的 sessionId（UUID 字符串），失败返回 None。
+    """
+    agent_dir = _get_agent_store_dir(agent_id)
+    sessions_json_path = agent_dir / "sessions" / "sessions.json"
+
+    if not sessions_json_path.exists():
+        logger.warning(f"sessions.json 不存在: {sessions_json_path}")
+        return None
+
+    session_key = f"agent:{agent_id}:explicit:{session_id}".lower()
+    try:
+        data = json.loads(sessions_json_path.read_text(encoding="utf-8"))
+        entry = data.get(session_key)
+        if entry is None:
+            logger.warning(f"sessions.json 中未找到 session key: {session_key}")
+            return None
+        uuid_str = entry.get("sessionId")
+        if not uuid_str:
+            logger.warning(f"sessions.json 中 session key {session_key} 无 sessionId 字段")
+            return None
+        logger.info(f"已从 sessions.json 解析 sessionId: {uuid_str}")
+        return uuid_str
+    except Exception as e:
+        logger.warning(f"解析 sessions.json 失败: {e}")
+        return None
+
+
 def _load_transcript(agent_id: str, session_id: str, started_at: float) -> List[Dict[str, Any]]:
     agent_dir = _get_agent_store_dir(agent_id)
-    transcript_path = agent_dir / "sessions" / f"{session_id}.jsonl"
-    logger.info(f"transcript 路径：f{transcript_path}")
+
+    # transcript 文件名已由 <session_id>.jsonl 变更为 <UUID>.jsonl，
+    # 需先从 sessions.json 解析实际的 UUID sessionId
+    resolved_id = _resolve_session_uuid(agent_id, session_id)
+    transcript_path = agent_dir / "sessions" / f"{resolved_id if resolved_id else session_id}.jsonl"
+    logger.info(f"transcript 路径：{transcript_path}")
 
     for attempt in range(6):
         if transcript_path.exists():

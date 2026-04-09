@@ -93,9 +93,11 @@ def _render_model_cost(data: dict[str, Any], totals: dict[str, Any]) -> list[str
     output_per_1m  = model_cost.get("output_cost_per_1M", 0.0)
     currency       = model_cost.get("currency", "USD")
 
-    input_tokens  = totals.get("input_tokens", 0)
-    output_tokens = totals.get("output_tokens", 0)
-    total_tokens  = totals.get("total_tokens", 0)
+    input_tokens        = totals.get("input_tokens", 0)
+    output_tokens       = totals.get("output_tokens", 0)
+    cache_read_tokens   = totals.get("cache_read_tokens", 0)
+    cache_write_tokens  = totals.get("cache_write_tokens", 0)
+    total_tokens        = totals.get("total_tokens", 0)
 
     input_cost  = input_tokens  / 1_000_000 * input_per_1m
     output_cost = output_tokens / 1_000_000 * output_per_1m
@@ -111,6 +113,8 @@ def _render_model_cost(data: dict[str, Any], totals: dict[str, Any]) -> list[str
         f"| 输出单价 | {output_per_1m} {currency} / 1M tokens |",
         f"| 输入 Tokens | {_fmt_tokens(input_tokens)} → **{input_cost:.4f} {currency}** |",
         f"| 输出 Tokens | {_fmt_tokens(output_tokens)} → **{output_cost:.4f} {currency}** |",
+        f"| Cache Read Tokens | {_fmt_tokens(cache_read_tokens)} |",
+        f"| Cache Write Tokens | {_fmt_tokens(cache_write_tokens)} |",
         f"| 合计 Tokens | {_fmt_tokens(total_tokens)} |",
         f"| 预估总费用 | **{total_cost:.4f} {currency}** |",
         "",
@@ -199,9 +203,11 @@ def _compute_totals(data: dict[str, Any]) -> dict[str, Any]:
     total_count    = len(results)
     succeeded      = sum(1 for r in results if r.get("success"))
     total_duration = sum(r.get("duration_sec", 0) or 0 for r in results)
-    total_tokens   = sum(r.get("total_tokens", 0) or 0 for r in results)
-    input_tokens   = sum(r.get("input_tokens", 0) or 0 for r in results)
-    output_tokens  = sum(r.get("output_tokens", 0) or 0 for r in results)
+    total_tokens        = sum(r.get("total_tokens", 0) or 0 for r in results)
+    input_tokens        = sum(r.get("input_tokens", 0) or 0 for r in results)
+    output_tokens       = sum(r.get("output_tokens", 0) or 0 for r in results)
+    cache_read_tokens   = sum(r.get("cache_read_tokens", 0) or 0 for r in results)
+    cache_write_tokens  = sum(r.get("cache_write_tokens", 0) or 0 for r in results)
     score_rate     = round(total_score / total_max * 100, 1) if total_max > 0 else 0.0
     total_tps_score = sum(r.get("tps_score", 0) or 0 for r in results)
     tps_list       = [r.get("tps", 0) for r in results if (r.get("tps") or 0) > 0]
@@ -219,6 +225,8 @@ def _compute_totals(data: dict[str, Any]) -> dict[str, Any]:
         "total_tokens": total_tokens,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
+        "cache_read_tokens": cache_read_tokens,
+        "cache_write_tokens": cache_write_tokens,
         "total_tps_score": total_tps_score,
         "avg_tps": avg_tps,
     }
@@ -259,6 +267,8 @@ def _render_summary(data: dict[str, Any], totals: dict[str, Any]) -> str:
         f"| 通过 / 失败 | ✅ {t['succeeded']}　❌ {t['failed']} |",
         f"| 总耗时 | {_fmt_duration(t['total_duration'])} |",
         f"| Token 消耗 | {_fmt_tokens(t['total_tokens'])}（输入 {_fmt_tokens(t['input_tokens'])} / 输出 {_fmt_tokens(t['output_tokens'])}）|",
+        f"| Cache Read Tokens | {_fmt_tokens(t['cache_read_tokens'])} |",
+        f"| Cache Write Tokens | {_fmt_tokens(t['cache_write_tokens'])} |",
         f"| 平均 TPS | {t['avg_tps']} tokens/s |",
         "",
         "---",
@@ -313,20 +323,6 @@ def _render_summary(data: dict[str, Any], totals: dict[str, Any]) -> str:
     else:
         tps_label = "🔴 过慢"
     diag_lines.append(f"🤖 **模型速度**：{avg_tps} TPS {tps_label}")
-
-    # 网络延迟
-    if api_ping is not None:
-        if api_ping < 100:
-            ping_label = "✅ 优秀"
-        elif api_ping < 300:
-            ping_label = "🟡 一般"
-        elif api_ping < 500:
-            ping_label = "🟠 较慢"
-        else:
-            ping_label = "🔴 过慢"
-        diag_lines.append(f"🌐 **模型 API 延迟**：{api_ping} ms {ping_label}")
-    else:
-        diag_lines.append("🌐 **模型 API 延迟**：未能测量")
 
     # 硬件
     if hw:
@@ -405,6 +401,8 @@ def _render_detail(data: dict[str, Any], totals: dict[str, Any]) -> str:
         f"| 通过 / 失败 | ✅ {t['succeeded']}　❌ {t['failed']} |",
         f"| 总耗时 | {_fmt_duration(t['total_duration'])} |",
         f"| Token 消耗 | {_fmt_tokens(t['total_tokens'])}（输入 {_fmt_tokens(t['input_tokens'])} / 输出 {_fmt_tokens(t['output_tokens'])}）|",
+        f"| Cache Read Tokens | {_fmt_tokens(t['cache_read_tokens'])} |",
+        f"| Cache Write Tokens | {_fmt_tokens(t['cache_write_tokens'])} |",
         f"| 平均 TPS | {t['avg_tps']} tokens/s |",
         "",
         "---",

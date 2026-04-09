@@ -31,7 +31,9 @@ from config import (
     DEFAULT_TIMEOUT_SEC,
     DEFAULT_SESSION_PREFIX,
     CLIENT_VERSION,
+    USE_LATEST_SESSION,
 )
+from session import get_openclaw_session_info, OpenClawSessionInfo, ran_under_openclaw_exec
 
 def setup_logging() -> logging.Logger:
     """配置日志记录，默认输出到文件和控制台。"""
@@ -310,8 +312,13 @@ def main() -> int:
     clean_benchclaw_workspace()
     clean_temp_files()
     cleanup_agent_sessions_with_prefix(DEFAULT_SESSION_ID, f'{DEFAULT_SESSION_PREFIX}*')
+    session_info: OpenClawSessionInfo = get_openclaw_session_info()
+    logger.info(f"openclaw SessionId: {session_info.session_id}")
+    logger.info(f"openclaw SessionKey: {session_info.session_key}")
+    logger.info(f"openclaw Channel: {session_info.channel}")
+    logger.info(f"openclaw Target: {session_info.target}")
 
-    bot = OpenclawBot()  # 默认读 ~/.openclaw/openclaw.json
+    bot = OpenclawBot()
     logger.info(f"Openclaw版本: {bot.version}")
     logger.info(f"Openclaw主模型: {bot.primary_model}")
     logger.info(f"openclaw root: {bot.openclaw_root}")
@@ -334,7 +341,6 @@ def main() -> int:
         api_session_id = fetch_result["session_id"]
         api_hash = fetch_result["hash"]
         model_cost = fetch_result.get("model_cost")
-        api_ping_ms = fetch_result.get("api_ping_ms")
         logger.info(f"下载题目成功: 共 {len(questions)} 道题目")
         if model_cost:
             logger.info(f"模型计费信息: {model_cost}")
@@ -348,6 +354,12 @@ def main() -> int:
 
     # 执行并收集结果
     caller = _load_caller_info()
+
+    # 如果使用最新会话作为消息推送渠道，则更新 caller 中的渠道和目标
+    if USE_LATEST_SESSION:
+        caller["channel"] = session_info.channel
+        caller["target"] = session_info.target
+
     hw_monitor = HardwareMonitor()
     hw_monitor.start()
     questions_results = []
@@ -358,6 +370,7 @@ def main() -> int:
         cat_label = task.get("category_label", cat)
         logger.info(f"正在测试 {task.get('id')} 类别:{cat_label} ...")
 
+        # _send_notification(f"正在进行{cat_label}{task.get('id')}, 当前进度{i+1}/{len(questions)}，请耐心等待...", caller)
         result = run_task_cli(task, timeout_sec=DEFAULT_TIMEOUT_SEC)
         questions_results.append(result)
 
@@ -406,7 +419,6 @@ def main() -> int:
         "api_hash": api_hash,
         "model_name": bot.primary_model or "",
         "model_cost": model_cost,
-        "api_ping_ms": api_ping_ms,  # C2: 到模型 API 的网络延迟（ms）
         "hardware_stats": hw_stats,
         "sys_info": sys_info,
         "agent_name": caller.get("agent_name", ""),

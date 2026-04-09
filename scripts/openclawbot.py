@@ -9,7 +9,7 @@ try:
 except Exception:
     json5 = None
 
-logger = logging.getLogger("openclawbot")
+logger = logging.getLogger("benchclaw.openclawbot")
 
 class OpenclawBot:
     """
@@ -36,6 +36,7 @@ class OpenclawBot:
 
     def _load(self) -> None:
         """通过 openclaw CLI 读取并解析信息，忽略读取和解析错误。"""
+        logger.info("正在读取Openclaw版本和模型信息...")
         meta_data = self._run_openclaw_json(["config", "get", "meta", "--json"])
         model_data = self._run_openclaw_json(
             ["config", "get", "agents.defaults.model", "--json"]
