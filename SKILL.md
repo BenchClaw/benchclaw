@@ -10,7 +10,7 @@ description: >
   TPS、OpenClaw。
 
   BenchClaw is the "AnTuTu" for OpenClaw Agents—a professional-grade automated benchmarking
-  framework. It provides multi-dimensional evaluation (Capability, Performance, Cost, Config, Security)
+  framework. It provides multi-dimensional evaluation (Capability, Config, Security, Hardware, Permission)
   through automated task execution, precision scoring, and detailed report generation.
 
   **User Intent**: run benchmark, get score, evaluate agent performance, generate scoring reports,

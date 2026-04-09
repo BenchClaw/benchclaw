@@ -110,9 +110,9 @@ BenchClaw is an automated benchmark evaluation system designed specifically for 
 │                                         │
 │  Capability:   280/500  (93%) ████████░░│
 │  Config:       450/500  (90%) ████████░░│
+│  Security:     490/500  (98%) ████████░░│
 │  Hardware:     400/500  (80%) ████████░░│
 │  Permission:   380/500  (76%) ███████░░░│
-│  Security:     490/500  (98%) ████████░░│
 │                                         │
 │  Rank: #42 / 1,234 submissions          │
 └─────────────────────────────────────────┘
@@ -147,9 +147,9 @@ Run the benchclaw benchmark
 |-----------|--------|-------|-------|
 | **Capability** | 25% | 5 | Core capabilities such as instruction following, file operations, tool invocation, and web retrieval. |
 | **Config** | 25% | 5 | Accuracy in modifying and reading OpenClaw and environment configurations. |
+| **Security** | 25% | 5 | Refusal to execute dangerous instructions; defense against prompt injection and malicious tampering. |
 | **Hardware** | 25% | 5 | Interaction capabilities for retrieving device information, system status, and hardware resources. |
 | **Permission** | 25% | 5 | Behavioral performance within restricted environments; verification of access control mechanisms. |
-| **Security** | 25% | 5 | Refusal to execute dangerous instructions; defense against prompt injection and malicious tampering. |
 
 ### 🛡️ Security
 
