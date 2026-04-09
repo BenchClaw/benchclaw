@@ -17,9 +17,6 @@ P+GOABlkd9K1M0OSvvs0lbu+8gHtYXllyw98l0SnkLUjZR2gmsYQD4Z5QXdvwNuu
 YQIDAQAB
 -----END PUBLIC KEY-----"""
 
-# HMAC 密钥（与 server BENCHCLAW_HMAC_KEY 一致）
-BENCHCLAW_HMAC_KEY = "T1ELQGiDLP0mEpwDOVsWrktwtWgcyr1q621wFkmj6fY="
-
 # ---------- API ----------
 BENCHCLAW_API_HOST = "benchclawapi.antutu.com"  # API 域名，更换时只需修改这里
 DEFAULT_API_URL = f"https://{BENCHCLAW_API_HOST}/api/v1/tests/request"
@@ -33,6 +30,7 @@ PROTOCOL_VERSION = 3
 DEFAULT_SESSION_ID = "main"
 DEFAULT_TIMEOUT_SEC = 300  # 单题最长等待秒数
 DEFAULT_SESSION_PREFIX = "benchclaw_session_"
+USE_LATEST_SESSION = True
 
 # ---------- 上传数据截断配置 ----------
 # stdout 内容截断长度（字符数），防止上传数据过大

@@ -1,7 +1,7 @@
 """
 BenchClaw 加解密模块 (RSA + AES 混合)
 
-请求：随机 AES-256 密钥 K → gpv；RSA 公钥加密 K → key。
+请求：随机 AES-256 密钥 K → gpv；RSA 公钥加密 K → key。题目包响应为明文 JSON，无需解密 data。
 依赖：cryptography >= 42.0
 """
 from __future__ import annotations

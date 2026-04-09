@@ -8,8 +8,6 @@ BenchClaw 服务端 API 模块。
 """
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
 import os
 import sys
@@ -18,7 +16,6 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from typing import Any
-import base64
 
 from config import (
     CLIENT_VERSION,
@@ -26,9 +23,8 @@ from config import (
     DEFAULT_SUBMIT_API_URL,
     UPLOAD_STDOUT_TRUNCATE_LENGTH,
     UPLOAD_STDERR_TRUNCATE_LENGTH,
-    BENCHCLAW_HMAC_KEY,
 )
-from crypto import hybrid_encrypt_json, client_decrypt
+from crypto import hybrid_encrypt_json
 
 # 分类得分映射：按字母序固定对应 s1~s5
 CATEGORY_ORDER = ["capability", "config", "hardware", "permission", "security"]
@@ -49,18 +45,6 @@ def _dump_to_temp(data: Any, filename: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-
-def _hmac_secret() -> bytes:
-    raw = (os.environ.get("BENCHCLAW_HMAC_KEY") or BENCHCLAW_HMAC_KEY or "").strip()
-    try:
-        return base64.b64decode(raw)
-    except Exception:
-        return raw.encode("utf-8")
-
-
-def _hmac_sign(key_field: str, gpv: str) -> str:
-    """HMAC-SHA256(密钥, UTF-8(key + '\\n' + gpv))，十六进制。"""
-    return hmac.new(_hmac_secret(), (key_field + "\n" + gpv).encode("utf-8"), hashlib.sha256).hexdigest()
 
 def _iso_time(ts: float) -> str:
     """将 Unix 时间戳（秒或毫秒）转为 ISO 8601 UTC 字符串。"""
@@ -83,11 +67,10 @@ def _post_json(
     Parameters
     ----------
     encrypt : bool
-        True 时 RSA+AES 混合加密为 {"key","gpv"}，响应用会话 AES 密钥解密 data。
+        True 时 RSA+AES 混合加密为 {"key","gpv"}；响应 data 为明文 JSON（v2.9）。
     """
-    aes_session: bytes | None = None
     if encrypt:
-        key_b64, gpv, aes_session = hybrid_encrypt_json(body)
+        key_b64, gpv, _aes = hybrid_encrypt_json(body)
         payload = json.dumps({"key": key_b64, "gpv": gpv}, ensure_ascii=False).encode("utf-8")
     else:
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
@@ -100,12 +83,7 @@ def _post_json(
 
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         raw = resp.read().decode("utf-8", errors="replace")
-    out = json.loads(raw)
-    if encrypt and aes_session is not None:
-        raw_data = out.get("data")
-        if isinstance(raw_data, str) and out.get("success"):
-            out = {**out, "data": client_decrypt(raw_data, aes_session)}
-    return out
+    return json.loads(raw)
 
 
 # ─────────────────────────────────────────────
@@ -167,10 +145,9 @@ def fetch_questions(
     if not out.get("success"):
         raise RuntimeError(f"API returned success=false: {out.get('message', out)}")
 
-    # _post_json(encrypt=True) 已用会话 AES 密钥解密 data 为 JSON 对象
     data = out.get("data")
     if not isinstance(data, dict):
-        raise RuntimeError(f"API data 格式错误：期望解密后的 JSON 对象，实际 {type(data).__name__}")
+        raise RuntimeError(f"API data 格式错误：期望题目包 JSON 对象，实际 {type(data).__name__}")
 
     # 仅供调试使用：将解密后的原始数据写入 tests 目录，便于调试查看
     # _dump_to_temp(data, "fetch_questions_data.json")
@@ -240,15 +217,17 @@ def _build_upload_payload(data: dict[str, Any]) -> dict[str, Any]:
         r = results[idx - 1] if idx <= len(results) else None
         if r is None:
             payload[f"r{idx}"] = {
-                "start_time":    "",
-                "end_time":      "",
-                "total_tokens":  0,
-                "input_tokens":  0,
-                "output_tokens": 0,
-                "returncode":    -1,
-                "error":         "",
-                "stdout":        "",
-                "stderr":        "",
+                "start_time":         "",
+                "end_time":           "",
+                "total_tokens":       0,
+                "input_tokens":       0,
+                "output_tokens":      0,
+                "cache_read_tokens":  0,
+                "cache_write_tokens": 0,
+                "returncode":         -1,
+                "error":              "",
+                "stdout":             "",
+                "stderr":             "",
                 "accuracy_score":     0,
                 "real_accuracy_score": 0,
                 "tps_score":          0,
@@ -271,18 +250,20 @@ def _build_upload_payload(data: dict[str, Any]) -> dict[str, Any]:
             stderr_val = stderr_val[:UPLOAD_STDERR_TRUNCATE_LENGTH] + "…(truncated)"
 
         payload[f"r{idx}"] = {
-            "start_time":     _iso_time(r.get("start_time")) if r.get("start_time") else "",
-            "end_time":       _iso_time(r.get("end_time"))   if r.get("end_time")   else "",
-            "total_tokens":   r.get("total_tokens") or 0,
-            "input_tokens":   r.get("input_tokens") or 0,
-            "output_tokens":  r.get("output_tokens") or 0,
-            "returncode":     r.get("returncode", -1),
-            "error":          r.get("error") or "",
-            "stdout":         stdout_val,
-            "stderr":         stderr_val,
-            "accuracy_score": r.get("accuracy_score") or 0,
+            "start_time":         _iso_time(r.get("start_time")) if r.get("start_time") else "",
+            "end_time":           _iso_time(r.get("end_time"))   if r.get("end_time")   else "",
+            "total_tokens":       r.get("total_tokens") or 0,
+            "input_tokens":       r.get("input_tokens") or 0,
+            "output_tokens":      r.get("output_tokens") or 0,
+            "cache_read_tokens":  r.get("cache_read_tokens") or 0,
+            "cache_write_tokens": r.get("cache_write_tokens") or 0,
+            "returncode":         r.get("returncode", -1),
+            "error":              r.get("error") or "",
+            "stdout":             stdout_val,
+            "stderr":             stderr_val,
+            "accuracy_score":     r.get("accuracy_score") or 0,
             "real_accuracy_score": r.get("real_accuracy_score") or 0,
-            "tps_score":      r.get("tps_score") or 0,
+            "tps_score":          r.get("tps_score") or 0,
         }
 
     return payload
@@ -452,8 +433,7 @@ def upload_results_from_dict(
         print(f"保存 payload 到文件失败: {e}")
 
     key_b64, gpv, _aes = hybrid_encrypt_json(payload)
-    sig = _hmac_sign(key_b64, gpv)
-    body = json.dumps({"key": key_b64, "gpv": gpv, "hash": sig}, ensure_ascii=False).encode("utf-8")
+    body = json.dumps({"key": key_b64, "gpv": gpv}, ensure_ascii=False).encode("utf-8")
 
     ok, msg = _do_post_body(body, fingerprint, upload_url)
     if ok:
