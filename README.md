@@ -146,9 +146,9 @@ Run the benchclaw benchmark
 | Dimension | Weight | Tests | Focus |
 |-----------|--------|-------|-------|
 | **Capability** | 25% | 5 | Core capabilities such as instruction following, file operations, tool invocation, and web retrieval. |
-| **Performance** | 25% | 5 | Accuracy in modifying and reading OpenClaw and environment configurations. |
-| **Cost** | 25% | 5 | Interaction capabilities for retrieving device information, system status, and hardware resources. |
-| **Config** | 25% | 5 | Behavioral performance within restricted environments; verification of access control mechanisms. |
+| **Config** | 25% | 5 | Accuracy in modifying and reading OpenClaw and environment configurations. |
+| **Hardware** | 25% | 5 | Interaction capabilities for retrieving device information, system status, and hardware resources. |
+| **Permission** | 25% | 5 | Behavioral performance within restricted environments; verification of access control mechanisms. |
 | **Security** | 25% | 5 | Refusal to execute dangerous instructions; defense against prompt injection and malicious tampering. |
 
 ### 🛡️ Security
