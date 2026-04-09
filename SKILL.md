@@ -279,10 +279,10 @@ jq '.results[] | select(.success == false) | {id, category, error}' temp/results
 > **数据透明说明 (Data Transparency)**
 > - 上报内容仅包含：评测得分、Token 消耗、任务结果、设备指纹——**不含任何对话内容、个人信息或凭证**。
 > - 设备指纹为本地生成的匿名 ID，存储于 `data/cache.json`。
-> - 所有上报数据使用 `AES-256-GCM` 加密 + `HMAC-SHA256` 签名。
+> - 所有上报数据使用 RSA+AES 混合（公钥内置）加密 + `HMAC-SHA256` 签名。
 > - 上报目标服务器：`benchclawapi.antutu.com`（BenchClaw 官方榜单服务，可在 `scripts/config.py` 中的 `BENCHCLAW_API_HOST` 修改）。
 > - 如不希望上报，可在 `scripts/config.py` 中禁用上报功能。
-> - 在 `scripts/config.py` 中的BENCHCLAW_CLIENT_KEY的密钥用于加密数据，该密钥用于与服务端约定的载荷格式/HMAC，在假定 TLS 的前提下使用，密钥随客户端分发，不视为对终端用户的机密性保障。
+> - 在 `scripts/config.py` 中的 `BENCHCLAW_HMAC_KEY` 用于分数上报 `hash` 的 HMAC；载荷加密为 RSA+AES 混合（公钥内置）。
 
 - **断网补报**：评测结束时网络断开，结果加密缓存；下次启动自动补报。
 

@@ -5,10 +5,20 @@ BenchClaw 全局配置常量。
 # ---------- APP ----------
 CLIENT_VERSION = '1.0.0'
 
-# ---------- 加解密 ----------
-# AES-256-GCM 密钥（Base64 编码，32 字节）
-# 可通过环境变量 BENCHCLAW_CLIENT_KEY 覆盖
-BENCHCLAW_CLIENT_KEY = "T1ELQGiDLP0mEpwDOVsWrktwtWgcyr1q621wFkmj6fY="
+# ---------- 加解密 (RSA + AES 混合) ----------
+# 服务端 RSA 公钥 PEM（与 server 配置一致；可通过环境变量覆盖，见 crypto 模块）
+BENCHCLAW_RSA_PUBLIC_KEY_PEM = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArup/oFdhbiac8TtQC297
+R6mzP59EToM2OJfnf7ZrbHYSAql0CE03Gv9GpHFhByOVRgNTcux+SQT3W5GohBkF
++emY/ntFd7QGnYIqa+1ME7yiZlzJhQ+ddP9YYpfZn6ixG6SsTne3vpWbiZRAv45A
+BswtsJYpi6VRk6dusuo8VzjLL/IA96ua0RW+ik/NaPdpSnsw0MR/xRkJ7nP2k9LJ
+L354Q+mroFh8dOkqiZjygqSJOPkyDH3SQMqgmJIMnvE+rqg72Ieb1UcnaESDzlMT
+P+GOABlkd9K1M0OSvvs0lbu+8gHtYXllyw98l0SnkLUjZR2gmsYQD4Z5QXdvwNuu
+YQIDAQAB
+-----END PUBLIC KEY-----"""
+
+# HMAC 密钥（与 server BENCHCLAW_HMAC_KEY 一致）
+BENCHCLAW_HMAC_KEY = "T1ELQGiDLP0mEpwDOVsWrktwtWgcyr1q621wFkmj6fY="
 
 # ---------- API ----------
 BENCHCLAW_API_HOST = "benchclawapi.antutu.com"  # API 域名，更换时只需修改这里

@@ -26,8 +26,9 @@ from config import (
     DEFAULT_SUBMIT_API_URL,
     UPLOAD_STDOUT_TRUNCATE_LENGTH,
     UPLOAD_STDERR_TRUNCATE_LENGTH,
+    BENCHCLAW_HMAC_KEY,
 )
-from crypto import client_encrypt, client_decrypt, _get_key
+from crypto import hybrid_encrypt_json, client_decrypt
 
 # 分类得分映射：按字母序固定对应 s1~s5
 CATEGORY_ORDER = ["capability", "config", "hardware", "permission", "security"]
@@ -49,13 +50,17 @@ def _dump_to_temp(data: Any, filename: str) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def _hmac_sign(gpv: str) -> str:
-    """
-    对 gpv 密文做 HMAC-SHA256 签名，密钥与 AES 加密密钥相同。
-    返回十六进制字符串。
-    """
-    key = _get_key()
-    return hmac.new(key, gpv.encode("utf-8"), hashlib.sha256).hexdigest()
+def _hmac_secret() -> bytes:
+    raw = (os.environ.get("BENCHCLAW_HMAC_KEY") or BENCHCLAW_HMAC_KEY or "").strip()
+    try:
+        return base64.b64decode(raw)
+    except Exception:
+        return raw.encode("utf-8")
+
+
+def _hmac_sign(key_field: str, gpv: str) -> str:
+    """HMAC-SHA256(密钥, UTF-8(key + '\\n' + gpv))，十六进制。"""
+    return hmac.new(_hmac_secret(), (key_field + "\n" + gpv).encode("utf-8"), hashlib.sha256).hexdigest()
 
 def _iso_time(ts: float) -> str:
     """将 Unix 时间戳（秒或毫秒）转为 ISO 8601 UTC 字符串。"""
@@ -78,11 +83,12 @@ def _post_json(
     Parameters
     ----------
     encrypt : bool
-        True 时将 body 加密后以 {"gpv": "<encrypted>"} 形式发送。
+        True 时 RSA+AES 混合加密为 {"key","gpv"}，响应用会话 AES 密钥解密 data。
     """
+    aes_session: bytes | None = None
     if encrypt:
-        gpv = client_encrypt(body)
-        payload = json.dumps({"gpv": gpv}, ensure_ascii=False).encode("utf-8")
+        key_b64, gpv, aes_session = hybrid_encrypt_json(body)
+        payload = json.dumps({"key": key_b64, "gpv": gpv}, ensure_ascii=False).encode("utf-8")
     else:
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
 
@@ -94,7 +100,12 @@ def _post_json(
 
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         raw = resp.read().decode("utf-8", errors="replace")
-    return json.loads(raw)
+    out = json.loads(raw)
+    if encrypt and aes_session is not None:
+        raw_data = out.get("data")
+        if isinstance(raw_data, str) and out.get("success"):
+            out = {**out, "data": client_decrypt(raw_data, aes_session)}
+    return out
 
 
 # ─────────────────────────────────────────────
@@ -156,13 +167,10 @@ def fetch_questions(
     if not out.get("success"):
         raise RuntimeError(f"API returned success=false: {out.get('message', out)}")
 
-    # data 是 AES 加密后的 Base64 字符串，解密得到 JSON 题库数据
-    raw_data = out.get("data")
-    if not isinstance(raw_data, str):
-        raise RuntimeError(f"API data 格式错误：期望加密字符串，实际 {type(raw_data).__name__}")
-    data = client_decrypt(raw_data)
+    # _post_json(encrypt=True) 已用会话 AES 密钥解密 data 为 JSON 对象
+    data = out.get("data")
     if not isinstance(data, dict):
-        raise RuntimeError("解密后的 data 不是 JSON 对象")
+        raise RuntimeError(f"API data 格式错误：期望解密后的 JSON 对象，实际 {type(data).__name__}")
 
     # 仅供调试使用：将解密后的原始数据写入 tests 目录，便于调试查看
     # _dump_to_temp(data, "fetch_questions_data.json")
@@ -443,9 +451,9 @@ def upload_results_from_dict(
     except Exception as e:
         print(f"保存 payload 到文件失败: {e}")
 
-    gpv = client_encrypt(payload)
-    hash = _hmac_sign(gpv)
-    body = json.dumps({"gpv": gpv, "hash": hash}, ensure_ascii=False).encode("utf-8")
+    key_b64, gpv, _aes = hybrid_encrypt_json(payload)
+    sig = _hmac_sign(key_b64, gpv)
+    body = json.dumps({"key": key_b64, "gpv": gpv, "hash": sig}, ensure_ascii=False).encode("utf-8")
 
     ok, msg = _do_post_body(body, fingerprint, upload_url)
     if ok:
