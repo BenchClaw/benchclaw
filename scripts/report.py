@@ -140,9 +140,9 @@ def _render_leaderboard(data: dict[str, Any]) -> list[str]:
     updated_at  = leaderboard.get("updated_at", "")
 
     # 从 category_stats 中获取真实的 category_label，与 server.py CATEGORY_ORDER 对应
-    # CATEGORY_ORDER = ["capability", "config", "hardware", "permission", "security"]
+    # CATEGORY_ORDER = ["capability", "config", "security", "hardware", "permission"]
     _cat_stats: dict = (data.get("stats") or {}).get("category_stats") or {}
-    _cat_order = ["capability", "config", "hardware", "permission", "security"]
+    _cat_order = ["capability", "config", "security", "hardware", "permission"]
     cat_map: dict[str, str] = {}
     for idx, cat_key in enumerate(_cat_order, start=1):
         cat_label = _cat_stats.get(cat_key, {}).get("category_label") or cat_key

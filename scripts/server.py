@@ -27,7 +27,7 @@ from config import (
 from crypto import hybrid_encrypt_json
 
 # 分类得分映射：按字母序固定对应 s1~s5
-CATEGORY_ORDER = ["capability", "config", "hardware", "permission", "security"]
+CATEGORY_ORDER = ["capability", "config", "security", "hardware", "permission"]
 
 # 服务端要求固定 25 个 b/r 字段
 TOTAL_QUESTIONS = 25
