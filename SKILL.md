@@ -28,7 +28,7 @@ metadata:
         - openclaw
 
     permissions:
-      network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. No personal data — only agent scores, token usage, and task results."
+      network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. Uploaded data includes: agent scores, token usage per task, task results (stdout/stderr truncated to 2000/500 chars), hardware/env info (CPU cores, memory, OS, Python version), and a local device fingerprint. Stdout/stderr may contain agent execution output — sensitive data in task outputs could be exposed to the server."
       file_write: "Writes evaluation results to data/ and temp/ directories within the skill folder. Writes device fingerprint to data/cache.json for tracking evaluation history."
       device_fingerprint: "Generates a local device fingerprint stored in data/cache.json. Used to correlate evaluation history across runs. No PII collected."
 ---
