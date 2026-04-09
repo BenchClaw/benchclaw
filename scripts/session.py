@@ -45,13 +45,6 @@ def ran_under_openclaw_exec() -> bool:
         or os.environ.get("OPENCLAW_CLI", "").strip() == "1"
     )
 
-def dump_env() -> dict[str, str]:
-    """返回当前进程的所有环境变量，并通过 logger 逐行输出。"""
-    env = dict(os.environ)
-    for key, value in sorted(env.items()):
-        logger.info(f"ENV {key}={value}")
-    return env
-
 def parse_json_from_mixed_output(output: str) -> dict[str, Any]:
     """
     Parse JSON from output that may contain extra log lines.
@@ -567,8 +560,6 @@ def get_openclaw_session_info() -> OpenClawSessionInfo:
 
 
 def main() -> int:
-    dump_env()
-    
     openclaw_cmd = shutil.which("openclaw") or shutil.which("openclaw.cmd")
     session_info = get_openclaw_session_info()
 
