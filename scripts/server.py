@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -26,7 +27,7 @@ from config import (
 )
 from crypto import hybrid_encrypt_json
 
-# 分类得分映射：按字母序固定对应 s1~s5
+# 分类得分映射 → s1~s5：能力、配置、安全、硬件、权限（与官网/榜单列一致）
 CATEGORY_ORDER = ["capability", "config", "security", "hardware", "permission"]
 
 # 服务端要求固定 25 个 b/r 字段
@@ -36,6 +37,39 @@ TOTAL_QUESTIONS = 25
 # ─────────────────────────────────────────────
 # 工具函数
 # ─────────────────────────────────────────────
+
+_SANITIZE_RULES: list[tuple[re.Pattern[str], str]] = [
+    # Anthropic Claude API key（必须在 OpenAI sk- 规则之前）
+    (re.compile(r"sk-ant-[a-zA-Z0-9\-]{20,}"), "sk-ant-***"),
+    # OpenAI API key
+    (re.compile(r"sk-[a-zA-Z0-9]{20,}"), "sk-***"),
+    # Google Gemini API key
+    (re.compile(r"AIza[a-zA-Z0-9_\-]{35}"), "AIza***"),
+    # AWS Access Key ID
+    (re.compile(r"AKIA[A-Z0-9]{16}"), "AKIA***"),
+    # GitHub Personal Access Token
+    (re.compile(r"ghp_[a-zA-Z0-9]{36}"), "ghp_***"),
+    # ClaWHub token
+    (re.compile(r"clh_[a-zA-Z0-9]+"), "clh_***"),
+    # Feishu open_id
+    (re.compile(r"ou_[a-f0-9]{32}"), "ou_***"),
+    # Slack token
+    (re.compile(r"xox[bpsa]-[a-zA-Z0-9\-]+"), "xox-***"),
+    # 本地路径 /home/...
+    (re.compile(r"/home/[^\s\"']+"), "/home/***"),
+    # 本地路径 /root/...
+    (re.compile(r"/root/[^\s\"']+"), "/root/***"),
+    # 邮箱地址
+    (re.compile(r"\b[\w.\+\-]+@[\w.\-]+\.\w+\b"), "***@***"),
+]
+
+
+def _sanitize_output(text: str) -> str:
+    """对 stdout/stderr 文本进行正则脱敏，替换已知的敏感信息模式。"""
+    for pattern, replacement in _SANITIZE_RULES:
+        text = pattern.sub(replacement, text)
+    return text
+
 
 def _dump_to_temp(data: Any, filename: str) -> None:
     """将数据以 JSON 格式写入 tests 目录，便于调试查看。"""
@@ -215,10 +249,12 @@ def _build_upload_payload(data: dict[str, Any]) -> dict[str, Any]:
         # 截断超长文本，避免 payload 过大
         if len(stdout_val) > UPLOAD_STDOUT_TRUNCATE_LENGTH:
             stdout_val = stdout_val[:UPLOAD_STDOUT_TRUNCATE_LENGTH] + "…(truncated)"
+        stdout_val = _sanitize_output(stdout_val)
 
         stderr_val = (r.get("stderr") or "")
         if len(stderr_val) > UPLOAD_STDERR_TRUNCATE_LENGTH:
             stderr_val = stderr_val[:UPLOAD_STDERR_TRUNCATE_LENGTH] + "…(truncated)"
+        stderr_val = _sanitize_output(stderr_val)
 
         payload[f"r{idx}"] = {
             "start_time":         _iso_time(r.get("start_time")) if r.get("start_time") else "",
@@ -465,5 +501,55 @@ def test_upload():
         return
 
 
+def test_sanitize():
+    """对 _sanitize_output 的各条脱敏规则进行验证。"""
+    cases = [
+        # (描述, 输入, 期望包含的替换结果)
+        ("Anthropic Claude API key", "token=sk-ant-abcdefghijklmnopqrst123456", "sk-ant-***"),
+        ("OpenAI API key",           "key: sk-abcdefghijklmnopqrstu",            "sk-***"),
+        ("Google Gemini API key",    "AIzaSyAbCdEfGhIjKlMnOpQrStUvWxYz12345678", "AIza***"),
+        ("AWS Access Key ID",        "access_key=AKIAIOSFODNN7EXAMPLE",           "AKIA***"),
+        ("GitHub PAT",               "ghp_" + "a" * 36,                           "ghp_***"),
+        ("ClaWHub token",            "auth: clh_MySecretToken123",                "clh_***"),
+        ("飞书 open_id",             "open_id: ou_" + "a1b2c3d4" * 4,             "ou_***"),
+        ("Slack bot token",          "xoxb-123456789-abcdefghij",                 "xox-***"),
+        ("Slack user token",         "xoxp-987654321-zyxwvutsrq",                 "xox-***"),
+        ("本地路径 /home/",           "reading /home/user/.bashrc failed",         "/home/***"),
+        ("本地路径 /root/",           "config at /root/.config/app.yaml",          "/root/***"),
+        ("邮箱地址",                  "contact admin@example.com for help",        "***@***"),
+        ("混合多条规则",
+         "key=sk-abcdefghijklmnopqrstu path=/home/ci/.env email=foo@bar.com",
+         None),  # None 表示只打印结果，不做单一断言
+    ]
+
+    passed = 0
+    failed = 0
+    for desc, text, expected in cases:
+        result = _sanitize_output(text)
+        if expected is None:
+            print(f"  [INFO] {desc}")
+            print(f"         输入  : {text}")
+            print(f"         输出  : {result}")
+            print()
+            continue
+        if expected in result and text != result:
+            print(f"  [PASS] {desc}")
+            print(f"         输入  : {text}")
+            print(f"         输出  : {result}")
+            passed += 1
+        else:
+            print(f"  [FAIL] {desc}")
+            print(f"         输入  : {text}")
+            print(f"         输出  : {result}")
+            print(f"         期望含: {expected}")
+            failed += 1
+        print()
+
+    print(f"结果: {passed} 通过, {failed} 失败")
+
+
 if __name__ == "__main__":
-    test_upload()
+    if len(sys.argv) > 1 and sys.argv[1] == "sanitize":
+        test_sanitize()
+    else:
+        test_upload()
