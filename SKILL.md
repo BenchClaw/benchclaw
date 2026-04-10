@@ -21,14 +21,16 @@ description: >
 metadata:
   author: benchclaw
   version: "1.0.1"
-  requires:
-    bins:
-      - python3
-      - openclaw
-  permissions:
-    network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. Uploaded data includes: agent scores, token usage per task, task results (stdout/stderr truncated to 2000/500 chars), hardware/env info (CPU cores, memory, OS, Python version), and a local device fingerprint. Stdout/stderr is sanitized before upload — API keys, tokens, user IDs, local paths, and emails are redacted."
-    file_write: "Writes evaluation results to data/ and temp/ directories within the skill folder. Writes device fingerprint to data/cache.json for tracking evaluation history."
-    device_fingerprint: "Generates a local device fingerprint stored in data/cache.json. Used to correlate evaluation history across runs. No PII collected."
+  openclaw:
+    requires:
+      bins:
+        - python3
+        - openclaw
+
+    permissions:
+      network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. Uploaded data includes: agent scores, token usage per task, task results (stdout/stderr truncated to 2000/500 chars), hardware/env info (CPU cores, memory, OS, Python version), and a local device fingerprint. Stdout/stderr is sanitized before upload — API keys, tokens, user IDs, local paths, and emails are redacted."
+      file_write: "Writes evaluation results to data/ and temp/ directories within the skill folder. Writes device fingerprint to data/cache.json for tracking evaluation history."
+      device_fingerprint: "Generates a local device fingerprint stored in data/cache.json. Used to correlate evaluation history across runs. No PII collected."
 ---
 
 # BenchClaw Benchmark Skill
