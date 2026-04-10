@@ -20,7 +20,7 @@ description: >
 
 metadata:
   author: benchclaw
-  version: "1.0.1"
+  version: "1.0.4"
   homepage: https://benchclaw.antutu.com
   repository: https://github.com/BenchClaw/benchclaw
   tags: [benchmark, BenchClaw Benchmark, Benchmark OpenClaw ]
