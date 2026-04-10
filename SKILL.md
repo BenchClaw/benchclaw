@@ -21,11 +21,12 @@ description: >
 metadata:
   author: benchclaw
   version: "1.0.1"
+  homepage: https://benchclaw.antutu.com
+  repository: https://github.com/BenchClaw/benchclaw
+  tags: [benchmark, BenchClaw Benchmark, Benchmark OpenClaw ]
   openclaw:
     requires:
-      bins:
-        - python3
-        - openclaw
+      bins: ["python3", "pip", "openclaw"]
 
     permissions:
       network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. Uploaded data includes: agent scores, token usage per task, task results (stdout/stderr truncated to 2000/500 chars), hardware/env info (CPU cores, memory, OS, Python version), and a local device fingerprint. Stdout/stderr is sanitized before upload — API keys, tokens, user IDs, local paths, and emails are redacted."
