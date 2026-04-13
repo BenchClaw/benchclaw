@@ -6,7 +6,7 @@ BenchClaw 全局配置常量。
 CLIENT_VERSION = '1.0.4'
 
 # ---------- 加解密 (RSA + AES 混合) ----------
-# 服务端 RSA 公钥 PEM（与 server 配置一致；可通过环境变量覆盖，见 crypto 模块）
+# 服务端 RSA 公钥 PEM（与 server 配置一致；可通过环境变量覆盖，见 crypto 模块），用于验证来自服务器的任务签名，确保题目未被篡改。
 BENCHCLAW_RSA_PUBLIC_KEY_PEM = """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArup/oFdhbiac8TtQC297
 R6mzP59EToM2OJfnf7ZrbHYSAql0CE03Gv9GpHFhByOVRgNTcux+SQT3W5GohBkF
