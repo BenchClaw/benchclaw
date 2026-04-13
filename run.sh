@@ -36,9 +36,12 @@ install_deps() {
  # 仅安装 requirements.txt 声明的依赖，不再安装到用户目录(--user)
  # 建议在 requirements.txt 中包含 --hash 校验以通过最高安全审计
  python3 -m pip install --upgrade pip --quiet
- python3 -m pip install -r "$REQUIREMENTS" --quiet
+ # 这将强制 pip 检查 requirements.txt 中每一行后面的 --hash 值
+ # 如果下载的文件哈希不匹配，安装将立即终止，防止供应链攻击
+ python3 -m pip install -r "$REQUIREMENTS" --require-hashes --quiet
  if [ $? -ne 0 ]; then
- echo "❌ 依赖安装失败，请检查网络连接或 requirements.txt 配置。"
+ echo "❌ 安全校验失败或网络问题。"
+ echo "   这可能是因为下载的包与 requirements.txt 中的指纹不符（存在安全风险）。"
  exit 1
  fi
 }
