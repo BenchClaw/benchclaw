@@ -21,7 +21,7 @@ from session_info import SessionInfo
 from usage_info import UsageInfo
 from config import (
     DEFAULT_SESSION_PREFIX,
-    DEFAULT_SESSION_ID
+    DEFAULT_AGENT_ID
 )
 logger = logging.getLogger("benchclaw")
 
@@ -127,7 +127,7 @@ def run_task_cli(
     base = resolve_openclaw_cmd()
     cmd = base + [
         "agent",
-        # "--agent", DEFAULT_SESSION_ID, 加上的话 session名称为 uuid
+        # "--agent", DEFAULT_AGENT_ID, 加上的话 session名称为 uuid
         "--session-id", session_id,
         "--message", f'执行文件中的指令：{prompt_file_path}',
         "--timeout", str(timeout_sec),

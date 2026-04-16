@@ -3,7 +3,7 @@ BenchClaw 全局配置常量。
 修改此文件即可调整运行参数，无需改动业务代码。
 """
 # ---------- APP ----------
-CLIENT_VERSION = '1.0.6'
+CLIENT_VERSION = '1.0.7'
 
 # ---------- 加解密 (RSA + AES 混合) ----------
 # 服务端 RSA 公钥 PEM（与 server 配置一致；可通过环境变量覆盖，见 crypto 模块），用于验证来自服务器的任务签名，确保题目未被篡改。
@@ -27,7 +27,7 @@ DEFAULT_WS_URL = "ws://127.0.0.1:18789"
 PROTOCOL_VERSION = 3
 
 # ---------- 会话 & 超时 ----------
-DEFAULT_SESSION_ID = "main"
+DEFAULT_AGENT_ID = "main"
 DEFAULT_TIMEOUT_SEC = 300  # 单题最长等待秒数
 DEFAULT_SESSION_PREFIX = "benchclaw_session_"
 USE_LATEST_SESSION = True

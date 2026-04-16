@@ -27,13 +27,13 @@ from report import generate_reports_from_dict
 from server import fetch_questions, upload_results_from_dict, flush_pending_uploads
 from config import (
     DEFAULT_SUBMIT_API_URL,
-    DEFAULT_SESSION_ID,
+    DEFAULT_AGENT_ID,
     DEFAULT_TIMEOUT_SEC,
     DEFAULT_SESSION_PREFIX,
     CLIENT_VERSION,
     USE_LATEST_SESSION,
 )
-from session import get_openclaw_session_info, OpenClawSessionInfo, ran_under_openclaw_exec
+from session import get_openclaw_session_info, OpenClawSessionInfo, ran_under_openclaw_exec, cleanup_agent_sessions
 
 def setup_logging() -> logging.Logger:
     """配置日志记录，默认输出到文件和控制台。"""
@@ -311,7 +311,9 @@ def main() -> int:
     # 运行前删除 bench_claw 工作区文件夹
     clean_benchclaw_workspace()
     clean_temp_files()
-    cleanup_agent_sessions_with_prefix(DEFAULT_SESSION_ID, f'{DEFAULT_SESSION_PREFIX}*')
+    cleanup_agent_sessions_with_prefix(DEFAULT_AGENT_ID, f'{DEFAULT_SESSION_PREFIX}*')
+    cleanup_agent_sessions(DEFAULT_AGENT_ID, DEFAULT_SESSION_PREFIX)
+    
     session_info: OpenClawSessionInfo = get_openclaw_session_info()
     logger.info(f"openclaw SessionId: {session_info.session_id}")
     logger.info(f"openclaw SessionKey: {session_info.session_key}")

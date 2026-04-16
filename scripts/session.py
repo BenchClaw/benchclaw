@@ -11,6 +11,7 @@ import traceback
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from config import DEFAULT_AGENT_ID, DEFAULT_SESSION_PREFIX
 
 SESSION_STORE_PATH = Path.home() / ".openclaw" / "agents" / "main" / "sessions" / "sessions.json"
 
@@ -235,6 +236,101 @@ def lookup_session_key_for_id(session_id: str) -> str | None:
         if str(entry.get("sessionId", "")).strip() == want:
             return str(key).strip() or None
     return None
+
+
+def cleanup_agent_sessions(
+    agent_id: str = DEFAULT_AGENT_ID,
+    session_prefix: str = DEFAULT_SESSION_PREFIX,
+) -> dict[str, int]:
+    """
+    清理指定 agent 下匹配 explicit session 前缀的历史会话：
+    1) 删除 <sessionId>.jsonl / <sessionId>.jsonl.lock
+    2) 删除 sessions.json 中对应 session key 条目
+    """
+    result = {
+        "matched_entries": 0,
+        "removed_session_files": 0,
+        "removed_lock_files": 0,
+        "removed_store_entries": 0,
+    }
+
+    session_store_path = (
+        Path.home() / ".openclaw" / "agents" / str(agent_id) / "sessions" / "sessions.json"
+    )
+    sessions_dir = session_store_path.parent
+
+    if not session_store_path.exists():
+        logger.warning("cleanup_agent_sessions: session store not found: %s", session_store_path)
+        return result
+
+    try:
+        payload = json.loads(session_store_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        logger.warning("cleanup_agent_sessions: failed to parse session store: %s", exc)
+        return result
+
+    if not isinstance(payload, dict):
+        logger.warning("cleanup_agent_sessions: invalid session store structure")
+        return result
+
+    key_prefix = f"agent:{agent_id}:explicit:{session_prefix}".lower()
+    keys_to_delete: list[str] = []
+
+    for key, entry in payload.items():
+        key_str = str(key).strip()
+        if not key_str.lower().startswith(key_prefix):
+            continue
+        if not isinstance(entry, dict):
+            continue
+
+        result["matched_entries"] += 1
+        session_id = str(entry.get("sessionId", "")).strip()
+        if session_id:
+            session_file = sessions_dir / f"{session_id}.jsonl"
+            lock_file = sessions_dir / f"{session_id}.jsonl.lock"
+
+            if session_file.exists():
+                try:
+                    session_file.unlink()
+                    result["removed_session_files"] += 1
+                except OSError as exc:
+                    logger.warning("cleanup_agent_sessions: failed to remove %s: %s", session_file, exc)
+
+            if lock_file.exists():
+                try:
+                    lock_file.unlink()
+                    result["removed_lock_files"] += 1
+                except OSError as exc:
+                    logger.warning("cleanup_agent_sessions: failed to remove %s: %s", lock_file, exc)
+
+        keys_to_delete.append(key_str)
+
+    if not keys_to_delete:
+        logger.info("cleanup_agent_sessions: no matching session entries for prefix %s", key_prefix)
+        return result
+
+    for key in keys_to_delete:
+        if key in payload:
+            del payload[key]
+            result["removed_store_entries"] += 1
+
+    try:
+        session_store_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        logger.warning("cleanup_agent_sessions: failed to write session store: %s", exc)
+        return result
+
+    logger.info(
+        "cleanup_agent_sessions done: matched=%s removed_jsonl=%s removed_lock=%s removed_entries=%s",
+        result["matched_entries"],
+        result["removed_session_files"],
+        result["removed_lock_files"],
+        result["removed_store_entries"],
+    )
+    return result
 
 
 def resolve_invoking_session(
@@ -598,4 +694,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    results = cleanup_agent_sessions()
+    logger.info("Cleanup agent sessions results: %s", results)
+    #raise SystemExit(main())
