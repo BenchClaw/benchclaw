@@ -1,7 +1,9 @@
 ---
-name: benchclaw
+name: benchclaw - openclaw benchmark
 description: >
-  BenchClaw 是 OpenClaw Agent 的专业级“安兔兔”评测框架。它专注于对 AI Agent 进行多维度、
+  BenchClaw - OpenClaw Agent benchmark scoring tool. Benchmark 跑分 评测 打分.
+
+  BenchClaw 是 OpenClaw Agent 的专业级"安兔兔"评测框架。它专注于对 AI Agent 进行多维度、
   自动化的量化评估与能力基准测试，集成了任务分发、精准评分、可视化报表生成及热更新功能。
   当需要量化 Agent 的推理规划、响应速度、Token 成本及安全性时使用。
 
@@ -23,7 +25,7 @@ metadata:
   version: "1.0.8"
   homepage: https://benchclaw.antutu.com
   repository: https://github.com/BenchClaw/benchclaw
-  tags: [benchmark, BenchClaw Benchmark, Benchmark OpenClaw ]
+  tags: [benchmark, benchclaw, scoring, evaluation, 跑分, 评测, 打分, agent benchmark, performance test, TPS, 安兔兔, agent performance, 基准测试, 自动化评测, 跑分测试, openclaw benchmark, benchmark tool, benchmark score]
   type: "executable"
   openclaw:
     requires:
@@ -37,7 +39,7 @@ metadata:
         - requests
 
     permissions:
-      network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. Uploaded data includes: agent scores, token usage per task, task results (stdout/stderr truncated to 2000/500 chars), hardware/env info (CPU cores, memory, OS, Python version), and a local device fingerprint. Stdout/stderr is sanitized before upload — API keys, tokens, user IDs, local paths, and emails are redacted."
+      network: "Uploads encrypted evaluation results to BenchClaw server using AESGCM + RSA. Uploaded data includes: agent scores, token usage per task, task results (stdout/stderr truncated to 2000/500 chars), hardware/env info (CPU cores, memory, OS, Python version), and a local device fingerprint. Stdout/stderr is sanitized before upload - API keys, tokens, user IDs, local paths, and emails are redacted."
       file_write: "Writes evaluation results to data/ and temp/ directories within the skill folder. Writes device fingerprint to data/cache.json for tracking evaluation history."
       device_fingerprint: "Generates a local device fingerprint stored in data/cache.json. Used to correlate evaluation history across runs. No PII collected."
 ---
@@ -274,7 +276,7 @@ jq '.results[] | select(.success == false) | {id, category, error}' temp/results
 ## 自动缓存与安全上报 (Offline Cache & Upload)
 
 > **数据透明说明 (Data Transparency)**
-> - 上报内容仅包含：评测得分、Token 消耗、任务结果、设备指纹——**不含任何对话内容、个人信息或凭证**。
+> - 上报内容仅包含：评测得分、Token 消耗、任务结果、设备指纹--**不含任何对话内容、个人信息或凭证**。
 > - 设备指纹为本地生成的匿名 ID，存储于 `data/cache.json`。
 > - 拉题与上报请求体使用 RSA+AES 混合（公钥内置）；题目包在 HTTPS 下以明文 JSON 下发。
 > - 上报目标服务器：`benchclawapi.antutu.com`（BenchClaw 官方榜单服务，可在 `scripts/config.py` 中的 `BENCHCLAW_API_HOST` 修改）。
