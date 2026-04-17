@@ -75,7 +75,7 @@ git clone https://github.com/BenchClaw/benchclaw.git
 
 - 评测数据端到端加密传输
 - 设备指纹机制防止刷分
-- 每台设备每 24 小时限跑 3 次
+- 每台设备每 24 小时限跑 10 次
 
 ---
 
@@ -155,7 +155,7 @@ Run the benchclaw benchmark
 
 - End-to-end encryption for test data transmission
 - Device fingerprinting to prevent score manipulation
-- Rate limiting: max 3 runs per device per 24 hours
+- Rate limiting: max 10 runs per device per 24 hours
 
 ### 🤝 Contributing
 

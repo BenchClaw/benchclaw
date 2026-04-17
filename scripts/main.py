@@ -16,6 +16,7 @@ import logging
 import os
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from typing import Any
 from pathlib import Path
@@ -347,9 +348,22 @@ def main() -> int:
         if model_cost:
             logger.info(f"模型计费信息: {model_cost}")
     except Exception as e:
-        logger.error(f"加载题目失败: {e}")
-        return 1
+        notify_msg = ""
+        if isinstance(e, urllib.error.HTTPError) and e.code == 429:
+            retry_after = e.headers.get("Retry-After") if e.headers else None
+            ra = str(retry_after).strip() if retry_after else ""
+            notify_msg = "⚠️ 今日评测次数已达上限（10次/24小时）。请明天再运行 BenchClaw 评测，或等待约 24 小时后重试。"
+            logger.error(notify_msg)
+        else:
+            notify_msg = f"运行benchclaw评测失败：加载题目失败，错误信息：{e}"
+            logger.error(notify_msg)
 
+        caller = _load_caller_info()
+        if USE_LATEST_SESSION:
+            caller["channel"] = session_info.channel
+            caller["target"] = session_info.target
+        _send_notification(notify_msg, caller)
+        return 1
 
     # DEBUG
     # questions = questions[0:1]
