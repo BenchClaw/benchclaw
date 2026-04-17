@@ -3,6 +3,7 @@ from typing import Any
 import json
 import subprocess
 import logging
+import re
 
 try:
     import json5  # type: ignore[import-not-found]
@@ -48,22 +49,10 @@ class OpenclawBot:
 
         self._load()
         self._initialized = True
+
     def _load(self) -> None:
         """通过 openclaw CLI 读取并解析信息，忽略读取和解析错误。"""
         logger.info("正在读取Openclaw版本和模型信息...")
-        meta_data = self._run_openclaw_json(["config", "get", "meta", "--json"])
-        model_data = self._run_openclaw_json(
-            ["config", "get", "agents.defaults.model", "--json"]
-        )
-
-        if isinstance(meta_data, dict):
-            self.raw_config["meta"] = meta_data
-        else:
-            logger.warning("读取 meta 失败或返回非对象 JSON")
-        if isinstance(model_data, dict):
-            self.raw_config["model"] = model_data
-        else:
-            logger.warning("读取 agents.defaults.model 失败或返回非对象 JSON")
 
         self._extract_version()
         self._extract_models()
@@ -188,19 +177,47 @@ class OpenclawBot:
     def _extract_version(self) -> None:
         """解析版本号。
 
-        优先顺序：
-        1. meta.lastTouchedVersion
-        2. meta.version
+        仅通过 `openclaw --version` 输出解析版本号（如 `OpenClaw 2026.4.9 (0512059)`）。
         """
-        v: Any = None
-        meta = self.raw_config.get("meta")
-        if isinstance(meta, dict):
-            v = meta.get("lastTouchedVersion") or meta.get("version")
+        # 延迟导入，避免与 agent_cli 的潜在循环依赖。
+        from agent_cli import resolve_openclaw_cmd
 
-        if isinstance(v, (str, int, float)):
-            self.version = str(v)
+        try:
+            proc = subprocess.run(
+                [*resolve_openclaw_cmd(), "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                encoding="utf-8",
+            )
+        except OSError as e:
+            logger.warning("执行 openclaw --version 失败: %s", e)
+            return None
+
+        output = ((proc.stdout or "") + "\n" + (proc.stderr or "")).strip()
+        if not output:
+            logger.warning("openclaw --version 无输出")
+            return None
+
+        # 示例: "OpenClaw 2026.4.9 (0512059)"
+        m = re.search(r"OpenClaw\s+([^\s]+)", output, flags=re.IGNORECASE)
+        if m:
+            self.version = m.group(1).strip()
+            return
+
+        logger.warning("无法从 openclaw --version 输出解析版本号: %s", output)
 
     def _extract_models(self) -> None:
+        model_data = self._run_openclaw_json(
+            ["config", "get", "agents.defaults.model", "--json"]
+        )
+
+        if isinstance(model_data, dict):
+            self.raw_config["model"] = model_data
+        else:
+            logger.warning("读取 agents.defaults.model 失败或返回非对象 JSON")
+            return
+
         model_cfg: dict[str, Any] | None = None
         maybe_model = self.raw_config.get("model")
         if isinstance(maybe_model, dict):
@@ -227,9 +244,9 @@ def get_openclaw_bot(config_path: str | None = None) -> OpenclawBot:
 
 def main()->None:
     bot = get_openclaw_bot()
-    print("版本:", bot.version)
-    print("Primary 模型:", bot.primary_model)
-    print("Fallbacks:", bot.fallback_models)
+    print("version:", bot.version)
+    print("primary model:", bot.primary_model)
+    print("fallbacks:", bot.fallback_models)
 
 if __name__ == "__main__":
     main()
