@@ -429,16 +429,6 @@ def upload_results_from_dict(
     except Exception as e:
         return False, f"构建上传数据失败: {e}", {}
 
-    # 保存 payload 到文件用于分析
-    try:
-        temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "temp")
-        os.makedirs(temp_dir, exist_ok=True)
-        payload_path = os.path.join(temp_dir, "uploads_payload.json")
-        with open(payload_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"保存 payload 到文件失败: {e}")
-
     key_b64, gpv, _aes = hybrid_encrypt_json(payload)
     body = json.dumps({"key": key_b64, "gpv": gpv}, ensure_ascii=False).encode("utf-8")
 
