@@ -350,9 +350,7 @@ def main() -> int:
     except Exception as e:
         notify_msg = ""
         if isinstance(e, urllib.error.HTTPError) and e.code == 429:
-            retry_after = e.headers.get("Retry-After") if e.headers else None
-            ra = str(retry_after).strip() if retry_after else ""
-            notify_msg = "⚠️ 今日评测次数已达上限（10次/24小时）。请明天再运行 BenchClaw 评测，或等待约 24 小时后重试。"
+            notify_msg = "⚠️ 今日评测次数已达上限(10次/24小时)，请明天再试。"
             logger.error(notify_msg)
         else:
             notify_msg = f"运行benchclaw评测失败：加载题目失败，错误信息：{e}"
