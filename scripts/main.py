@@ -23,7 +23,7 @@ from pathlib import Path
 
 from openclawbot import get_openclaw_bot
 from agent_cli import run_task_cli, get_latest_session, cleanup_agent_sessions_with_prefix
-from utils import get_fingerprint, get_temp_file, clean_temp_files, clean_benchclaw_workspace, HardwareMonitor, get_system_info
+from utils import get_bench_session_id, get_temp_file, clean_temp_files, clean_benchclaw_workspace, HardwareMonitor, get_system_info
 from report import generate_reports_from_dict
 from server import fetch_questions, upload_results_from_dict, flush_pending_uploads
 from config import (
@@ -173,7 +173,7 @@ def print_brief_stats(stats: dict[str, dict[str, Any]]):
 
 def _upload_results(
         summary: dict[str, Any],
-        fingerprint: str,
+        bench_session_id: str,
         hash: str
     ) -> dict[str, Any]:
     """将评测结果上传到服务端，返回排行榜数据（上传失败时返回空 dict）。"""
@@ -181,7 +181,7 @@ def _upload_results(
         logger.warning("没有结果数据，跳过上传")
         return {}
     try:
-        ok, msg, leaderboard = upload_results_from_dict(summary, fingerprint, hash, DEFAULT_SUBMIT_API_URL)
+        ok, msg, leaderboard = upload_results_from_dict(summary, bench_session_id, hash, DEFAULT_SUBMIT_API_URL)
         if ok:
             logger.info(f"上传成功: {msg}")
             category_stats = summary.get("stats", {}).get("category_stats")
@@ -314,7 +314,7 @@ def main() -> int:
     clean_temp_files()
     cleanup_agent_sessions_with_prefix(DEFAULT_AGENT_ID, f'{DEFAULT_SESSION_PREFIX}*')
     cleanup_agent_sessions(DEFAULT_AGENT_ID, DEFAULT_SESSION_PREFIX)
-    
+
     session_info: OpenClawSessionInfo = get_openclaw_session_info()
     logger.info(f"openclaw SessionId: {session_info.session_id}")
     logger.info(f"openclaw SessionKey: {session_info.session_key}")
@@ -326,8 +326,8 @@ def main() -> int:
     logger.info(f"Openclaw主模型: {bot.primary_model}")
     logger.info(f"openclaw root: {bot.openclaw_root}")
 
-    device_fingerprint = get_fingerprint()
-    logger.info(f"设备指纹: {device_fingerprint}")
+    bench_session_id = get_bench_session_id()
+    logger.info(f"Bench 会话 ID: {bench_session_id}")
 
     # 补报上次因网络失败缓存的数据
     try:
@@ -339,7 +339,7 @@ def main() -> int:
 
     # 下载题目
     try:
-        fetch_result = fetch_questions(device_fingerprint, bot.primary_model, openclaw_root=str(bot.openclaw_root))
+        fetch_result = fetch_questions(bench_session_id, bot.primary_model, openclaw_root=str(bot.openclaw_root))
         questions = fetch_result["questions"]
         api_session_id = fetch_result["session_id"]
         api_hash = fetch_result["hash"]
@@ -458,7 +458,7 @@ def main() -> int:
         summary["agent_name"] = ""  # 匿名上报
 
     # 直接上报结果到服务端
-    leaderboard = _upload_results(summary, device_fingerprint, api_hash)
+    leaderboard = _upload_results(summary, bench_session_id, api_hash)
 
     # 将排行榜写入报表（上传成功后追加）
     if leaderboard:

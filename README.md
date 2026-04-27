@@ -154,7 +154,7 @@ Run the benchclaw benchmark
 ### 🛡️ Security
 
 - End-to-end encryption for test data transmission
-- Device fingerprinting to prevent score manipulation
+- Bench session id (`X-Bench-Session-Id`) for rate limiting and submission binding
 - Rate limiting: max 10 runs per device per 24 hours
 
 ### 🤝 Contributing
