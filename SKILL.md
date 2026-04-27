@@ -22,10 +22,10 @@ description: >
 
 metadata:
   author: benchclaw
-  version: "1.0.9"
+  version: "1.1.0"
   homepage: https://benchclaw.antutu.com
   repository: https://github.com/BenchClaw/benchclaw
-  tags: [benchmark, benchclaw, scoring, evaluation, 跑分, 评测, 打分, agent benchmark, performance test, TPS, 安兔兔, agent performance, 基准测试, 自动化评测, 跑分测试, openclaw benchmark, benchmark tool, benchmark score]
+  tags: [benchclaw, benchmark, openclaw benchmark, 龙虾跑分, 龙虾评测]
   type: "executable"
   openclaw:
     requires:
