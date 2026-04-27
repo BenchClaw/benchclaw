@@ -210,7 +210,7 @@ bash run.sh
 ```bash
 cd scripts
 # 安装依赖到用户目录（--user，不需要 sudo/root 权限，不影响系统 Python）
-# 依赖仅包含：cryptography（加密通信）、psutil（硬件信息采集）
+# 依赖仅包含：cryptography（加密通信）、psutil（展示CPU占用，内存占用信息）
 pip install -r requirements.txt --user --quiet
 python main.py
 ```
