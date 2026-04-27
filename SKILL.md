@@ -1,9 +1,9 @@
 ---
-name: benchclaw - openclaw benchmark
+name: benchclaw - openclaw-benchmark
 description: >
   BenchClaw - OpenClaw Agent benchmark scoring tool. Benchmark 跑分 评测 打分.
 
-  BenchClaw 是 OpenClaw Agent 的专业级"安兔兔"评测框架。它专注于对 AI Agent 进行多维度、
+  BenchClaw是专业级 OpenClaw Agent 性能评测框架。它专注于对 AI Agent 进行多维度、
   自动化的量化评估与能力基准测试，集成了任务分发、精准评分、可视化报表生成及热更新功能。
   当需要量化 Agent 的推理规划、响应速度、Token 成本及安全性时使用。
 
@@ -21,11 +21,11 @@ description: >
   Cost Analysis, OpenClaw.
 
 metadata:
-  author: benchclaw
+  author: antutuadmin
   version: "1.1.0"
   homepage: https://benchclaw.antutu.com
   repository: https://github.com/BenchClaw/benchclaw
-  tags: [benchclaw, benchmark, openclaw benchmark, 龙虾跑分, 龙虾评测]
+  tags: [benchclaw, benchmark, openclaw-benchmark, 龙虾跑分, 龙虾评测]
   type: "executable"
   openclaw:
     requires:
