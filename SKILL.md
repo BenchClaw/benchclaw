@@ -21,7 +21,7 @@ description: >
   Cost Analysis, OpenClaw.
 
 metadata:
-  author: antutuadmin
+  author: benchclaw
   version: "1.1.0"
   homepage: https://benchclaw.antutu.com
   repository: https://github.com/BenchClaw/benchclaw
