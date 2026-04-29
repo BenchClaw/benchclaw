@@ -45,7 +45,6 @@ class OpenclawBot:
 
         # 模型相关
         self.primary_model: str | None = None
-        self.fallback_models: list[str] = []
 
         self._load()
         self._initialized = True
@@ -208,14 +207,13 @@ class OpenclawBot:
         logger.warning("无法从 openclaw --version 输出解析版本号: %s", output)
 
     def _extract_models(self) -> None:
-        model_data = self._run_openclaw_json(
-            ["config", "get", "agents.defaults.model", "--json"]
-        )
+        self.primary_model = "unknown"
+        model_data = self._run_openclaw_json(["models", "status", "--json"])
 
         if isinstance(model_data, dict):
             self.raw_config["model"] = model_data
         else:
-            logger.warning("读取 agents.defaults.model 失败或返回非对象 JSON")
+            logger.warning("读取 openclaw models status --json 失败或返回非对象 JSON")
             return
 
         model_cfg: dict[str, Any] | None = None
@@ -224,16 +222,12 @@ class OpenclawBot:
             model_cfg = maybe_model
 
         if model_cfg is not None:
-            primary = model_cfg.get("primary") or model_cfg.get("id")
+            primary = (
+                model_cfg.get("resolvedDefault")
+                or model_cfg.get("defaultModel")
+            )
             if isinstance(primary, str) and primary.strip():
                 self.primary_model = primary.strip()
-
-            fallbacks = model_cfg.get("fallbacks")
-            if isinstance(fallbacks, list):
-                self.fallback_models = [
-                    str(m).strip() for m in fallbacks if str(m).strip()
-                ]
-
 
 def get_openclaw_bot(config_path: str | None = None) -> OpenclawBot:
     """返回全局唯一的 OpenclawBot 实例。"""
@@ -246,7 +240,6 @@ def main()->None:
     bot = get_openclaw_bot()
     print("version:", bot.version)
     print("primary model:", bot.primary_model)
-    print("fallbacks:", bot.fallback_models)
 
 if __name__ == "__main__":
     main()
